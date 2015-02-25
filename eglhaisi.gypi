@@ -23,21 +23,15 @@
         '../events/events.gyp:events',
         '../events/ozone/events_ozone.gyp:events_ozone_evdev',
         '../gfx/gfx.gyp:gfx',
-        'platform/eglhaisi/ppapi_gstreamer.gyp:ppapi_gstreamer',
       ],
       'sources': [
         'ozone_platform_eglhaisi.cc',
         'ozone_platform_eglhaisi.h',
         'eglhaisi_surface_factory.cc',
         'eglhaisi_surface_factory.h',
-        'eglhaisi_event_factory.cc',
-        'eglhaisi_event_factory.h',
-        'hi_ir_remote.h',
-        'hi_ir_remote.cc',
       ],
       'link_settings': {
             'libraries': [
-              '-lhi_ir',
               '-lhi_common'
             ],
       },
