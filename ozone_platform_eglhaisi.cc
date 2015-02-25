@@ -4,7 +4,6 @@
 
 #include "ui/ozone/platform/eglhaisi/ozone_platform_eglhaisi.h"
 #include "ui/ozone/platform/eglhaisi/eglhaisi_surface_factory.h"
-#include "ui/ozone/platform/eglhaisi/eglhaisi_event_factory.h"
 
 #include "ui/ozone/public/cursor_factory_ozone.h"
 #include "ui/ozone/ozone_platform.h"
