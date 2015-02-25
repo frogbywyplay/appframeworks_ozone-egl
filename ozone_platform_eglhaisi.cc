@@ -11,10 +11,8 @@
 #include "ui/ozone/public/gpu_platform_support.h"
 #include "ui/ozone/public/gpu_platform_support_host.h"
 
-#ifndef EGLHAISI_USE_IR
 #include "ui/events/ozone/device/device_manager.h"
 #include "ui/events/ozone/evdev/event_factory_evdev.h"
-#endif
 
 #if defined(OS_CHROMEOS)
 #include "ui/ozone/common/chromeos/native_display_delegate_ozone.h"
@@ -30,7 +28,7 @@ class OzonePlatformEglhaisi : public OzonePlatform {
   OzonePlatformEglhaisi()
   {
   }
-  virtual ~OzonePlatformEglhaisi() { 
+  virtual ~OzonePlatformEglhaisi() {
   }
 
   // OzonePlatform:
@@ -57,21 +55,17 @@ class OzonePlatformEglhaisi : public OzonePlatform {
     return scoped_ptr<NativeDisplayDelegate>(new NativeDisplayDelegateOzone());
   }
 #endif
-  
+
   virtual void InitializeUI() OVERRIDE {
     printf("---------InitializeUI\n");
-#ifdef EGLHAISI_USE_IR
-   event_factory_ozone_.reset(new EglhaisiEventFactory());
-#else
-   device_manager_ = CreateDeviceManager();    
+   device_manager_ = CreateDeviceManager();
    event_factory_ozone_.reset(
         new EventFactoryEvdev(NULL, device_manager_.get()));
-#endif 
     surface_factory_ozone_.reset(new SurfaceFactoryEglhaisi());
     cursor_factory_ozone_.reset(new CursorFactoryOzone());
     gpu_platform_support_host_.reset(CreateStubGpuPlatformSupportHost());
   }
-  
+
   virtual void InitializeGPU() OVERRIDE {
     printf("---------InitializeGPU\n");
     if(!surface_factory_ozone_)
@@ -82,13 +76,9 @@ class OzonePlatformEglhaisi : public OzonePlatform {
   }
 
  private:
-  
-#ifdef EGLHAISI_USE_IR  
-  scoped_ptr<EglhaisiEventFactory> event_factory_ozone_;
-#else
+
   scoped_ptr<DeviceManager> device_manager_;
   scoped_ptr<EventFactoryEvdev> event_factory_ozone_;
-#endif
   scoped_ptr<SurfaceFactoryEglhaisi> surface_factory_ozone_;
   scoped_ptr<CursorFactoryOzone> cursor_factory_ozone_;
   scoped_ptr<GpuPlatformSupport> gpu_platform_support_;
