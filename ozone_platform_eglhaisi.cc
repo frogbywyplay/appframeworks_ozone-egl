@@ -56,7 +56,6 @@ class OzonePlatformEglhaisi : public OzonePlatform {
 #endif
 
   virtual void InitializeUI() OVERRIDE {
-    printf("---------InitializeUI\n");
    device_manager_ = CreateDeviceManager();
    event_factory_ozone_.reset(
         new EventFactoryEvdev(NULL, device_manager_.get()));
@@ -66,7 +65,6 @@ class OzonePlatformEglhaisi : public OzonePlatform {
   }
 
   virtual void InitializeGPU() OVERRIDE {
-    printf("---------InitializeGPU\n");
     if(!surface_factory_ozone_)
     {
         surface_factory_ozone_.reset(new SurfaceFactoryEglhaisi());
@@ -89,7 +87,6 @@ class OzonePlatformEglhaisi : public OzonePlatform {
 }  // namespace
 
 OzonePlatform* CreateOzonePlatformEglhaisi() {
-  printf("-----------CreateOzonePlatformEglhaisi\n");
   OzonePlatformEglhaisi* platform = new OzonePlatformEglhaisi;
   return platform;
 }

@@ -18,7 +18,7 @@ class SurfaceFactoryEglhaisi : public ui::SurfaceFactoryOzone {
  public:
   SurfaceFactoryEglhaisi();
   virtual ~SurfaceFactoryEglhaisi();
-  
+
   // SurfaceFactoryOzone:
   virtual HardwareState InitializeHardware() OVERRIDE;
   virtual void ShutdownHardware() OVERRIDE;
@@ -31,9 +31,6 @@ class SurfaceFactoryEglhaisi : public ui::SurfaceFactoryOzone {
   virtual bool LoadEGLGLES2Bindings(
       AddGLLibraryCallback add_gl_library,
       SetGLGetProcAddressProcCallback setprocaddress) OVERRIDE;
- private:
-    void setColorKey(int key);
-    int console_fd_;
 };
 
 }  // namespace ui
