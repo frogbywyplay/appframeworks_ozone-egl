@@ -1,6 +1,7 @@
 #include "base/files/file_path.h"
 #include "base/native_library.h"
 #include "ui/ozone/platform/eglhaisi/eglhaisi_surface_factory.h"
+#include "ui/ozone/platform/eglhaisi/eglhaisi_vsync_provider.h"
 #include "ui/ozone/public/surface_ozone_egl.h"
 #include "ui/ozone/public/surface_factory_ozone.h"
 #include "ui/gfx/vsync_provider.h"
@@ -62,7 +63,7 @@ class SurfaceOzoneEglhaisi : public SurfaceOzoneEGL {
   }
 
   virtual scoped_ptr<gfx::VSyncProvider> CreateVSyncProvider() OVERRIDE {
-    return scoped_ptr<gfx::VSyncProvider>();
+    return scoped_ptr<gfx::VSyncProvider>(new EglhaisiVSyncProvider());
   }
 
  private:

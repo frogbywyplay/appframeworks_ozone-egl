@@ -29,6 +29,8 @@
         'ozone_platform_eglhaisi.h',
         'eglhaisi_surface_factory.cc',
         'eglhaisi_surface_factory.h',
+        'eglhaisi_vsync_provider.cc',
+        'eglhaisi_vsync_provider.h',
       ],
       'link_settings': {
             'libraries': [
