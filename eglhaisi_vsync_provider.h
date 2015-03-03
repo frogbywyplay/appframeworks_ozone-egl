@@ -15,7 +15,7 @@ class EglhaisiVSyncProvider : public gfx::VSyncProvider {
 
  private:
 
-  DISALLOW_COPY_AND_ASSIGN(DriVSyncProvider);
+  DISALLOW_COPY_AND_ASSIGN(EglhaisiVSyncProvider);
 };
 
 }  // namespace ui
