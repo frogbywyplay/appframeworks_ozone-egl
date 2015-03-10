@@ -37,17 +37,17 @@ class SurfaceOzoneEglhaisi : public SurfaceOzoneEGL {
     }
   }
 
-  virtual intptr_t GetNativeWindow() OVERRIDE
+  virtual intptr_t GetNativeWindow()
   {
     return (intptr_t)native_window_;
   }
 
-  virtual bool OnSwapBuffers() OVERRIDE
+  virtual bool OnSwapBuffers()
   {
     return true;
   }
 
-  virtual bool ResizeNativeWindow(const gfx::Size& viewport_size) OVERRIDE {
+  virtual bool ResizeNativeWindow(const gfx::Size& viewport_size) {
     if(native_window_ != NULL)
     {
        free(native_window_);
@@ -62,8 +62,12 @@ class SurfaceOzoneEglhaisi : public SurfaceOzoneEGL {
     return true;
   }
 
-  virtual scoped_ptr<gfx::VSyncProvider> CreateVSyncProvider() OVERRIDE {
+  virtual scoped_ptr<gfx::VSyncProvider> CreateVSyncProvider() {
     return scoped_ptr<gfx::VSyncProvider>(new EglhaisiVSyncProvider());
+  }
+
+  virtual bool OnSwapBuffersAsync(const SwapCompletionCallback& callback) {
+    return false;
   }
 
  private:

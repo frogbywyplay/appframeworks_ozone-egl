@@ -49,8 +49,7 @@ class OzonePlatformEglhaisi : public OzonePlatform {
   }
 
 #if defined(OS_CHROMEOS)
-  virtual scoped_ptr<NativeDisplayDelegate> CreateNativeDisplayDelegate()
-      OVERRIDE {
+  virtual scoped_ptr<NativeDisplayDelegate> CreateNativeDisplayDelegate() {
     return scoped_ptr<NativeDisplayDelegate>(new NativeDisplayDelegateOzone());
   }
 #endif
