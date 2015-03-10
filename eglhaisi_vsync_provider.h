@@ -11,7 +11,7 @@ class EglhaisiVSyncProvider : public gfx::VSyncProvider {
   EglhaisiVSyncProvider();
   virtual ~EglhaisiVSyncProvider();
 
-  virtual void GetVSyncParameters(const UpdateVSyncCallback& callback) OVERRIDE;
+  virtual void GetVSyncParameters(const UpdateVSyncCallback& callback);
 
  private:
 

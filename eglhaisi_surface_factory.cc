@@ -79,22 +79,8 @@ SurfaceFactoryEglhaisi::~SurfaceFactoryEglhaisi()
 {
 }
 
-SurfaceFactoryEglhaisi::HardwareState
-SurfaceFactoryEglhaisi::InitializeHardware() {
-    return INITIALIZED;
-}
-
-void SurfaceFactoryEglhaisi::ShutdownHardware() {
-}
-
 intptr_t SurfaceFactoryEglhaisi::GetNativeDisplay() {
   return (intptr_t)EGL_DEFAULT_DISPLAY;
-}
-
-gfx::AcceleratedWidget SurfaceFactoryEglhaisi::GetAcceleratedWidget() {
-  static int opaque_handle = 0;
-  opaque_handle++;
-  return (gfx::AcceleratedWidget)opaque_handle;
 }
 
 scoped_ptr<SurfaceOzoneEGL>

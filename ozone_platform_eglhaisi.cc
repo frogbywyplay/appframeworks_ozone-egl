@@ -6,7 +6,7 @@
 #include "ui/ozone/platform/eglhaisi/eglhaisi_surface_factory.h"
 
 #include "ui/ozone/public/cursor_factory_ozone.h"
-#include "ui/ozone/ozone_platform.h"
+#include "ui/ozone/public/ozone_platform.h"
 #include "ui/ozone/public/gpu_platform_support.h"
 #include "ui/ozone/public/gpu_platform_support_host.h"
 
@@ -31,20 +31,20 @@ class OzonePlatformEglhaisi : public OzonePlatform {
   }
 
   // OzonePlatform:
-  virtual ui::SurfaceFactoryOzone* GetSurfaceFactoryOzone() OVERRIDE {
+  virtual ui::SurfaceFactoryOzone* GetSurfaceFactoryOzone() {
     return surface_factory_ozone_.get();
   }
-  virtual EventFactoryOzone* GetEventFactoryOzone() OVERRIDE {
+  virtual EventFactoryOzone* GetEventFactoryOzone() {
     return event_factory_ozone_.get();
   }
-  virtual CursorFactoryOzone* GetCursorFactoryOzone() OVERRIDE {
+  virtual CursorFactoryOzone* GetCursorFactoryOzone() {
     return cursor_factory_ozone_.get();
   }
 
-  virtual GpuPlatformSupport* GetGpuPlatformSupport() OVERRIDE {
+  virtual GpuPlatformSupport* GetGpuPlatformSupport() {
       return gpu_platform_support_.get();
   }
-  virtual GpuPlatformSupportHost* GetGpuPlatformSupportHost() OVERRIDE {
+  virtual GpuPlatformSupportHost* GetGpuPlatformSupportHost() {
       return gpu_platform_support_host_.get();
   }
 
@@ -55,7 +55,7 @@ class OzonePlatformEglhaisi : public OzonePlatform {
   }
 #endif
 
-  virtual void InitializeUI() OVERRIDE {
+  virtual void InitializeUI() {
    device_manager_ = CreateDeviceManager();
    event_factory_ozone_.reset(
         new EventFactoryEvdev(NULL, device_manager_.get()));
@@ -64,7 +64,7 @@ class OzonePlatformEglhaisi : public OzonePlatform {
     gpu_platform_support_host_.reset(CreateStubGpuPlatformSupportHost());
   }
 
-  virtual void InitializeGPU() OVERRIDE {
+  virtual void InitializeGPU() {
     if(!surface_factory_ozone_)
     {
         surface_factory_ozone_.reset(new SurfaceFactoryEglhaisi());

@@ -20,17 +20,14 @@ class SurfaceFactoryEglhaisi : public ui::SurfaceFactoryOzone {
   virtual ~SurfaceFactoryEglhaisi();
 
   // SurfaceFactoryOzone:
-  virtual HardwareState InitializeHardware() OVERRIDE;
-  virtual void ShutdownHardware() OVERRIDE;
-  virtual intptr_t GetNativeDisplay() OVERRIDE;
-  virtual gfx::AcceleratedWidget GetAcceleratedWidget() OVERRIDE;
+  virtual intptr_t GetNativeDisplay();
   virtual scoped_ptr<SurfaceOzoneEGL> CreateEGLSurfaceForWidget(
-      gfx::AcceleratedWidget widget) OVERRIDE;
+      gfx::AcceleratedWidget widget);
   virtual const int32* GetEGLSurfaceProperties(
-      const int32* desired_list) OVERRIDE;
+      const int32* desired_list);
   virtual bool LoadEGLGLES2Bindings(
       AddGLLibraryCallback add_gl_library,
-      SetGLGetProcAddressProcCallback setprocaddress) OVERRIDE;
+      SetGLGetProcAddressProcCallback setprocaddress);
 };
 
 }  // namespace ui
