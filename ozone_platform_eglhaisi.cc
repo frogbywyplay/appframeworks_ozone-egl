@@ -48,7 +48,7 @@ namespace ui {
           ui::PlatformEventSource::GetInstance()->AddPlatformEventDispatcher(this);
         }
 
-        ~EglhaisiWindow() override;
+        ~EglhaisiWindow() {};
 
         // PlatformWindow:
         gfx::Rect GetBounds() {
