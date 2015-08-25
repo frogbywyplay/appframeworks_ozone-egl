@@ -8,7 +8,6 @@
 
 #include <EGL/egl.h>
 #include "EGL/fbdev_window.h"
-#include "hifb.h"
 #include <sys/ioctl.h>
 #include <fcntl.h>
 
