@@ -34,7 +34,8 @@
       ],
       'link_settings': {
             'libraries': [
-              '-lhi_common'
+              '-lEGL',
+              '-lGLESv2'
             ],
       },
     },
