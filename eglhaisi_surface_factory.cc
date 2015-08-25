@@ -6,6 +6,14 @@
 #include "ui/ozone/public/surface_factory_ozone.h"
 #include "ui/gfx/vsync_provider.h"
 
+
+
+#include "ui/ozone/public/surface_ozone_canvas.h"
+#include "ui/gfx/skia_util.h"
+#include "third_party/skia/include/core/SkBitmap.h"
+#include "third_party/skia/include/core/SkCanvas.h"
+#include "third_party/skia/include/core/SkSurface.h"
+
 #include <EGL/egl.h>
 #include "EGL/fbdev_window.h"
 #include <sys/ioctl.h>
@@ -16,6 +24,74 @@
 
 namespace ui {
 
+
+/////////////////////////////////////////////////////////////
+
+
+class EglHaisiOzoneCanvas: public ui::SurfaceOzoneCanvas {
+ public:
+  EglHaisiOzoneCanvas();
+  virtual ~EglHaisiOzoneCanvas();
+  virtual void ResizeCanvas(const gfx::Size& viewport_size) override;
+  //virtual skia::RefPtr<SkCanvas> GetCanvas() override {
+  virtual skia::RefPtr<SkCanvas> GetCanvas() {
+    return skia::SharePtr<SkCanvas>(surface_->getCanvas());
+  }
+  virtual void PresentCanvas(const gfx::Rect& damage) override;
+  virtual scoped_ptr<gfx::VSyncProvider> CreateVSyncProvider() override {
+    return scoped_ptr<gfx::VSyncProvider>();
+  }
+  virtual skia::RefPtr<SkSurface> GetSurface() override {
+	return surface_;
+  }
+ private:
+  skia::RefPtr<SkSurface> surface_;
+  //ozone_egl_UserData userDate_;
+};
+
+EglHaisiOzoneCanvas::EglHaisiOzoneCanvas()
+{
+//    memset(&userDate_,0,sizeof(userDate_));
+}
+EglHaisiOzoneCanvas::~EglHaisiOzoneCanvas()
+{
+//    ozone_egl_textureShutDown (&userDate_);
+}
+
+void EglHaisiOzoneCanvas::ResizeCanvas(const gfx::Size& viewport_size)
+{
+  /*if(userDate_.width == viewport_size.width() && userDate_.height==viewport_size.height())
+  {
+      return;
+  }
+  else if(userDate_.width != 0 && userDate_.height !=0)
+  {
+      ozone_egl_textureShutDown (&userDate_);
+  }
+  surface_ = skia::AdoptRef(SkSurface::NewRaster(
+        SkImageInfo::Make(viewport_size.width(),
+                                   viewport_size.height(),
+                                   kPMColor_SkColorType,
+                                   kPremul_SkAlphaType)));
+  userDate_.width = viewport_size.width();
+  userDate_.height = viewport_size.height();
+  userDate_.colorType = GL_BGRA_EXT;
+  ozone_egl_textureInit ( &userDate_);
+  */
+}
+
+void EglHaisiOzoneCanvas::PresentCanvas(const gfx::Rect& damage)
+{
+    /*SkImageInfo info;
+    size_t row_bytes;
+    userDate_.data = (char *) surface_->peekPixels(&info, &row_bytes);
+    ozone_egl_textureDraw(&userDate_);
+    ozone_egl_swap();*/
+}
+
+
+/////////////////////////////////////////////////////
+//
 namespace {
 
 class SurfaceOzoneEglhaisi : public SurfaceOzoneEGL {
@@ -55,6 +131,7 @@ class SurfaceOzoneEglhaisi : public SurfaceOzoneEGL {
     native_window_ = (fbdev_window *) malloc( sizeof(fbdev_window));
     if (NULL != native_window_)
     {
+     
         native_window_->width  = viewport_size.width();
         native_window_->height = viewport_size.height();
     }
@@ -84,13 +161,17 @@ SurfaceFactoryEglhaisi::~SurfaceFactoryEglhaisi()
 
 intptr_t SurfaceFactoryEglhaisi::GetNativeDisplay() {
   return (intptr_t)EGL_DEFAULT_DISPLAY;
+  //return (intptr_t)((EGLNativeDisplayType)1);
 }
 
-scoped_ptr<SurfaceOzoneEGL>
-SurfaceFactoryEglhaisi::CreateEGLSurfaceForWidget(
-    gfx::AcceleratedWidget widget) {
-  return make_scoped_ptr<SurfaceOzoneEGL>(
-      new SurfaceOzoneEglhaisi(widget));
+scoped_ptr<SurfaceOzoneEGL> SurfaceFactoryEglhaisi::CreateEGLSurfaceForWidget(gfx::AcceleratedWidget widget) {
+  return make_scoped_ptr<SurfaceOzoneEGL>(new SurfaceOzoneEglhaisi(widget));
+}
+
+scoped_ptr<SurfaceOzoneCanvas> SurfaceFactoryEglhaisi::CreateCanvasForWidget(gfx::AcceleratedWidget widget) {
+  //scoped_ptr<EglOzoneCanvas> canvas(new EglOzoneCanvas());
+  //return canvas.PassAs<ui::SurfaceOzoneCanvas>();   
+  return make_scoped_ptr<SurfaceOzoneCanvas>(new EglHaisiOzoneCanvas());
 }
 
 bool SurfaceFactoryEglhaisi::LoadEGLGLES2Bindings(

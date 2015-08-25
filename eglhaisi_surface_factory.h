@@ -21,8 +21,9 @@ class SurfaceFactoryEglhaisi : public ui::SurfaceFactoryOzone {
 
   // SurfaceFactoryOzone:
   virtual intptr_t GetNativeDisplay();
-  virtual scoped_ptr<SurfaceOzoneEGL> CreateEGLSurfaceForWidget(
-      gfx::AcceleratedWidget widget);
+  virtual scoped_ptr<SurfaceOzoneEGL> CreateEGLSurfaceForWidget(gfx::AcceleratedWidget widget);
+  virtual scoped_ptr<SurfaceOzoneCanvas> CreateCanvasForWidget(gfx::AcceleratedWidget widget);
+
   virtual const int32* GetEGLSurfaceProperties(
       const int32* desired_list);
   virtual bool LoadEGLGLES2Bindings(
