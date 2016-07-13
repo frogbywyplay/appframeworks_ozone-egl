@@ -27,6 +27,8 @@
       'sources': [
         'ozone_platform_eglhaisi.cc',
         'ozone_platform_eglhaisi.h',
+        'client_native_pixmap_factory_eglhaisi.cc',
+        'client_native_pixmap_factory_eglhaisi.h',
         'eglhaisi_surface_factory.cc',
         'eglhaisi_surface_factory.h',
         'eglhaisi_vsync_provider.cc',

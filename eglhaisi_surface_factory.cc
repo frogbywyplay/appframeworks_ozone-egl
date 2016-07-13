@@ -24,16 +24,11 @@
 
 namespace ui {
 
-
-/////////////////////////////////////////////////////////////
-
-
 class EglHaisiOzoneCanvas: public ui::SurfaceOzoneCanvas {
  public:
   EglHaisiOzoneCanvas();
   virtual ~EglHaisiOzoneCanvas();
   virtual void ResizeCanvas(const gfx::Size& viewport_size) override;
-  //virtual skia::RefPtr<SkCanvas> GetCanvas() override {
   virtual skia::RefPtr<SkCanvas> GetCanvas() {
     return skia::SharePtr<SkCanvas>(surface_->getCanvas());
   }
@@ -46,58 +41,25 @@ class EglHaisiOzoneCanvas: public ui::SurfaceOzoneCanvas {
   }
  private:
   skia::RefPtr<SkSurface> surface_;
-  //ozone_egl_UserData userDate_;
 };
 
-EglHaisiOzoneCanvas::EglHaisiOzoneCanvas()
-{
-//    memset(&userDate_,0,sizeof(userDate_));
+EglHaisiOzoneCanvas::EglHaisiOzoneCanvas() {
 }
-EglHaisiOzoneCanvas::~EglHaisiOzoneCanvas()
-{
-//    ozone_egl_textureShutDown (&userDate_);
+EglHaisiOzoneCanvas::~EglHaisiOzoneCanvas() {
 }
 
-void EglHaisiOzoneCanvas::ResizeCanvas(const gfx::Size& viewport_size)
-{
-  /*if(userDate_.width == viewport_size.width() && userDate_.height==viewport_size.height())
-  {
-      return;
-  }
-  else if(userDate_.width != 0 && userDate_.height !=0)
-  {
-      ozone_egl_textureShutDown (&userDate_);
-  }
-  surface_ = skia::AdoptRef(SkSurface::NewRaster(
-        SkImageInfo::Make(viewport_size.width(),
-                                   viewport_size.height(),
-                                   kPMColor_SkColorType,
-                                   kPremul_SkAlphaType)));
-  userDate_.width = viewport_size.width();
-  userDate_.height = viewport_size.height();
-  userDate_.colorType = GL_BGRA_EXT;
-  ozone_egl_textureInit ( &userDate_);
-  */
+void EglHaisiOzoneCanvas::ResizeCanvas(const gfx::Size& viewport_size) {
 }
 
-void EglHaisiOzoneCanvas::PresentCanvas(const gfx::Rect& damage)
-{
-    /*SkImageInfo info;
-    size_t row_bytes;
-    userDate_.data = (char *) surface_->peekPixels(&info, &row_bytes);
-    ozone_egl_textureDraw(&userDate_);
-    ozone_egl_swap();*/
+void EglHaisiOzoneCanvas::PresentCanvas(const gfx::Rect& damage) {
 }
 
-
-/////////////////////////////////////////////////////
-//
 namespace {
 
 class SurfaceOzoneEglhaisi : public SurfaceOzoneEGL {
  public:
   SurfaceOzoneEglhaisi(gfx::AcceleratedWidget window_id){
-    native_window_ = (fbdev_window *) malloc( sizeof(fbdev_window));
+    native_window_ = (fbdev_window *) malloc(sizeof(fbdev_window));
     if (NULL != native_window_)
     {
         native_window_->width  = EGLHAISI_WINDOW_WIDTH;
@@ -128,10 +90,9 @@ class SurfaceOzoneEglhaisi : public SurfaceOzoneEGL {
        free(native_window_);
        native_window_ = NULL;
     }
-    native_window_ = (fbdev_window *) malloc( sizeof(fbdev_window));
+    native_window_ = (fbdev_window *) malloc(sizeof(fbdev_window));
     if (NULL != native_window_)
     {
-     
         native_window_->width  = viewport_size.width();
         native_window_->height = viewport_size.height();
     }
@@ -142,8 +103,7 @@ class SurfaceOzoneEglhaisi : public SurfaceOzoneEGL {
     return scoped_ptr<gfx::VSyncProvider>(new EglhaisiVSyncProvider());
   }
 
-  virtual bool OnSwapBuffersAsync(const SwapCompletionCallback& callback) {
-    return false;
+  virtual void OnSwapBuffersAsync(const SwapCompletionCallback& callback) {
   }
 
  private:
@@ -161,17 +121,32 @@ SurfaceFactoryEglhaisi::~SurfaceFactoryEglhaisi()
 
 intptr_t SurfaceFactoryEglhaisi::GetNativeDisplay() {
   return (intptr_t)EGL_DEFAULT_DISPLAY;
-  //return (intptr_t)((EGLNativeDisplayType)1);
 }
 
-scoped_ptr<SurfaceOzoneEGL> SurfaceFactoryEglhaisi::CreateEGLSurfaceForWidget(gfx::AcceleratedWidget widget) {
+scoped_ptr<SurfaceOzoneEGL> SurfaceFactoryEglhaisi::CreateEGLSurfaceForWidget(
+    gfx::AcceleratedWidget widget) {
   return make_scoped_ptr<SurfaceOzoneEGL>(new SurfaceOzoneEglhaisi(widget));
 }
 
-scoped_ptr<SurfaceOzoneCanvas> SurfaceFactoryEglhaisi::CreateCanvasForWidget(gfx::AcceleratedWidget widget) {
-  //scoped_ptr<EglOzoneCanvas> canvas(new EglOzoneCanvas());
-  //return canvas.PassAs<ui::SurfaceOzoneCanvas>();   
+scoped_ptr<SurfaceOzoneCanvas> SurfaceFactoryEglhaisi::CreateCanvasForWidget(
+    gfx::AcceleratedWidget widget) {
   return make_scoped_ptr<SurfaceOzoneCanvas>(new EglHaisiOzoneCanvas());
+}
+
+const int32_t* SurfaceFactoryEglhaisi::GetEGLSurfaceProperties(
+    const int32_t* desired_list) {
+  static const EGLint kConfigAttribs[] = {
+    EGL_BUFFER_SIZE, 32,
+    EGL_ALPHA_SIZE, 8,
+    EGL_BLUE_SIZE, 8,
+    EGL_GREEN_SIZE, 8,
+    EGL_RED_SIZE, 8,
+    EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
+    EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
+    EGL_NONE
+  };
+
+  return kConfigAttribs;
 }
 
 bool SurfaceFactoryEglhaisi::LoadEGLGLES2Bindings(
@@ -211,22 +186,6 @@ bool SurfaceFactoryEglhaisi::LoadEGLGLES2Bindings(
   add_gl_library.Run(egl_library);
   add_gl_library.Run(gles_library);
   return true;
-}
-
-const int32* SurfaceFactoryEglhaisi::GetEGLSurfaceProperties(
-    const int32* desired_list) {
-  static const EGLint kConfigAttribs[] = {
-    EGL_BUFFER_SIZE, 32,
-    EGL_ALPHA_SIZE, 8,
-    EGL_BLUE_SIZE, 8,
-    EGL_GREEN_SIZE, 8,
-    EGL_RED_SIZE, 8,
-    EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
-    EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
-    EGL_NONE
-  };
-
-  return kConfigAttribs;
 }
 
 }  // namespace ui

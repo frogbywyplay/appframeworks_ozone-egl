@@ -7,12 +7,14 @@
 
 #include "ui/platform_window/platform_window.h"
 #include "ui/platform_window/platform_window_delegate.h"
+#include "ui/platform_window/platform_ime_controller.h"
 
 #include "ui/ozone/public/cursor_factory_ozone.h"
 #include "ui/ozone/public/ozone_platform.h"
 #include "ui/ozone/public/gpu_platform_support.h"
 #include "ui/ozone/public/gpu_platform_support_host.h"
 #include "ui/ozone/common/native_display_delegate_ozone.h"
+#include "ui/ozone/common/stub_overlay_manager.h"
 
 #include "ui/events/ozone/events_ozone.h"
 #include "ui/events/ozone/device/device_manager.h"
@@ -20,10 +22,59 @@
 #include "ui/events/ozone/layout/keyboard_layout_engine_manager.h"
 #include "ui/events/ozone/layout/stub/stub_keyboard_layout_engine.h"
 #include "ui/events/platform/platform_event_dispatcher.h"
+#include "ui/views/widget/desktop_aura/desktop_factory_ozone.h"
+#include "ui/views/widget/desktop_aura/desktop_window_tree_host.h"
+
+#include "ui/aura/test/test_screen.h"
+
+#include "base/logging.h"
+
+#include <iostream>
 
 namespace ui {
 
   namespace {
+
+    class EglhaisiDesktopFactoryOzone :
+        public views::DesktopFactoryOzone {
+
+      public:
+        EglhaisiDesktopFactoryOzone() {
+          views::DesktopFactoryOzone::SetInstance(this);
+        }
+
+        ~EglhaisiDesktopFactoryOzone() {
+          views::DesktopFactoryOzone::SetInstance(NULL);
+        }
+
+        views::DesktopWindowTreeHost* CreateWindowTreeHost(
+          views::internal::NativeWidgetDelegate* native_widget_delegate,
+          views::DesktopNativeWidgetAura* desktop_native_widget_aura) override {
+          return views::DesktopWindowTreeHost::Create(native_widget_delegate, desktop_native_widget_aura);
+        }
+
+        gfx::Screen* CreateDesktopScreen() override {
+          aura::TestScreen* screen = aura::TestScreen::Create(gfx::Size());
+          gfx::Screen::SetScreenInstance(gfx::SCREEN_TYPE_NATIVE, screen);
+          return screen;
+        }
+    };
+
+    class EglhaisiImeController :
+        public PlatformImeController {
+
+      public:
+        EglhaisiImeController() {}
+        ~EglhaisiImeController() {}
+
+        void UpdateTextInputState(const TextInputState&) {
+          // Nothing to do here
+        }
+
+        void SetImeVisibility(bool visible) {
+          // Nothing to do here
+        }
+    };
 
     class EglhaisiWindow :
         public PlatformWindow,
@@ -37,15 +88,16 @@ namespace ui {
         };
 
         EglhaisiWindow(PlatformWindowDelegate* delegate,
-                      EventFactoryEvdev* event_factory,
-                      const gfx::Rect& bounds)
+                       EventFactoryEvdev* event_factory,
+                       const gfx::Rect& bounds)
           : delegate_(delegate),
             event_factory_(event_factory),
             bounds_(bounds),
             window_id_(EglhaisiWindow::GetWindowId())
         {
-          delegate_->OnAcceleratedWidgetAvailable(window_id_);
+          delegate_->OnAcceleratedWidgetAvailable(window_id_, 1.f);
           ui::PlatformEventSource::GetInstance()->AddPlatformEventDispatcher(this);
+          ime_controller_.reset(new EglhaisiImeController());
         }
 
         ~EglhaisiWindow() {};
@@ -60,27 +112,28 @@ namespace ui {
           delegate_->OnBoundsChanged(bounds);
         }
 
+        void SetTitle(const base::string16& title) {}
         void Show() {}
-        void Hide() {};
-        void Close() {};
-        void SetCapture() {};
-        void ReleaseCapture() {};
-        void ToggleFullscreen() {};
-        void Maximize() {};
-        void Minimize() {};
-        void Restore() {};
-        void SetCursor(PlatformCursor cursor) {};
+        void Hide() {}
+        void Close() {}
+        void SetCapture() {}
+        void ReleaseCapture() {}
+        void ToggleFullscreen() {}
+        void Maximize() {}
+        void Minimize() {}
+        void Restore() {}
+        void SetCursor(PlatformCursor cursor) {}
 
         void MoveCursorTo(const gfx::Point& location) {
-          event_factory_->WarpCursorTo(window_id_, location);
-        };
+          event_factory_->WarpCursorTo(window_id_, gfx::PointF(location));
+        }
 
-        void ConfineCursorToBounds(const gfx::Rect& bounds) {};
+        void ConfineCursorToBounds(const gfx::Rect& bounds) {}
 
         // PlatformEventDispatcher:
         bool CanDispatchEvent(const PlatformEvent& event) {
           return true;
-        };
+        }
 
         uint32_t DispatchEvent(const PlatformEvent& native_event) {
           DispatchEventFromNativeUiEvent(
@@ -90,11 +143,16 @@ namespace ui {
           return ui::POST_DISPATCH_STOP_PROPAGATION;
         }
 
+        PlatformImeController* GetPlatformImeController() {
+          return ime_controller_.get();
+        }
+
       private:
         PlatformWindowDelegate* delegate_;
         EventFactoryEvdev* event_factory_;
         gfx::Rect bounds_;
         gfx::AcceleratedWidget window_id_;
+        scoped_ptr<EglhaisiImeController> ime_controller_;
 
         DISALLOW_COPY_AND_ASSIGN(EglhaisiWindow);
     };
@@ -103,15 +161,19 @@ namespace ui {
 
     class OzonePlatformEglhaisi : public OzonePlatform {
       public:
-        OzonePlatformEglhaisi()
-        {
+        OzonePlatformEglhaisi() {
         }
+
         virtual ~OzonePlatformEglhaisi() {
         }
 
         // OzonePlatform:
         virtual ui::SurfaceFactoryOzone* GetSurfaceFactoryOzone() {
           return surface_factory_ozone_.get();
+        }
+
+        OverlayManagerOzone* GetOverlayManager() {
+          return overlay_manager_.get();
         }
 
         virtual CursorFactoryOzone* GetCursorFactoryOzone() {
@@ -129,12 +191,17 @@ namespace ui {
           return scoped_ptr<ui::NativeDisplayDelegate>(new NativeDisplayDelegateOzone());
         }
 
+        base::ScopedFD OpenClientNativePixmapDevice() const {
+          return base::ScopedFD();
+        }
+
         virtual void InitializeUI() {
           device_manager_ = CreateDeviceManager();
           KeyboardLayoutEngineManager::SetKeyboardLayoutEngine(
             make_scoped_ptr(new StubKeyboardLayoutEngine()));
           event_factory_ozone_.reset(
             new EventFactoryEvdev(NULL, device_manager_.get(), KeyboardLayoutEngineManager::GetKeyboardLayoutEngine()));
+          overlay_manager_.reset(new StubOverlayManager());
           surface_factory_ozone_.reset(new SurfaceFactoryEglhaisi());
           cursor_factory_ozone_.reset(new CursorFactoryOzone());
           gpu_platform_support_host_.reset(CreateStubGpuPlatformSupportHost());
@@ -168,6 +235,8 @@ namespace ui {
         scoped_ptr<CursorFactoryOzone> cursor_factory_ozone_;
         scoped_ptr<GpuPlatformSupport> gpu_platform_support_;
         scoped_ptr<GpuPlatformSupportHost> gpu_platform_support_host_;
+        scoped_ptr<OverlayManagerOzone> overlay_manager_;
+        EglhaisiDesktopFactoryOzone desktop_factory_;
 
         DISALLOW_COPY_AND_ASSIGN(OzonePlatformEglhaisi);
     };
