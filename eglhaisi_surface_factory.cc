@@ -307,6 +307,10 @@ l_exit:
   virtual void OnSwapBuffersAsync(const SwapCompletionCallback& callback) {
   }
 
+  virtual void* /* EGLConfig */ GetEGLSurfaceConfig(const EglConfigCallbacks& egl) {
+    return nullptr;
+  }
+
  private:
 #if defined(OZONE_PLATFORM_EGLHAISI_DIRECTFB) || defined(OZONE_PLATFORM_EGLHAISI_MSTAR)
   IDirectFBDisplayLayer *layer_;

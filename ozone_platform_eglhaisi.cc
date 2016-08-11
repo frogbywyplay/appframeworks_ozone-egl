@@ -55,7 +55,7 @@ namespace ui {
 
         gfx::Screen* CreateDesktopScreen() override {
           aura::TestScreen* screen = aura::TestScreen::Create(gfx::Size());
-          gfx::Screen::SetScreenInstance(gfx::SCREEN_TYPE_NATIVE, screen);
+          gfx::Screen::SetScreenInstance(screen);
           return screen;
         }
     };
