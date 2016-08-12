@@ -14,13 +14,8 @@
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkSurface.h"
 
+#include <directfb.h>
 #include <EGL/egl.h>
-#include "EGL/fbdev_window.h"
-#include <sys/ioctl.h>
-#include <fcntl.h>
-
-#define EGLHAISI_WINDOW_WIDTH 1280
-#define EGLHAISI_WINDOW_HEIGTH 720
 
 namespace ui {
 
@@ -37,7 +32,7 @@ class EglHaisiOzoneCanvas: public ui::SurfaceOzoneCanvas {
     return scoped_ptr<gfx::VSyncProvider>();
   }
   virtual skia::RefPtr<SkSurface> GetSurface() override {
-	return surface_;
+    return surface_;
   }
  private:
   skia::RefPtr<SkSurface> surface_;
@@ -58,25 +53,64 @@ namespace {
 
 class SurfaceOzoneEglhaisi : public SurfaceOzoneEGL {
  public:
-  SurfaceOzoneEglhaisi(gfx::AcceleratedWidget window_id){
-    native_window_ = (fbdev_window *) malloc(sizeof(fbdev_window));
-    if (NULL != native_window_)
-    {
-        native_window_->width  = EGLHAISI_WINDOW_WIDTH;
-        native_window_->height = EGLHAISI_WINDOW_HEIGTH;
+  SurfaceOzoneEglhaisi(gfx::AcceleratedWidget window_id)
+      : layer_(NULL),
+        surface_(NULL) {
+    DFBResult result;
+    IDirectFB *dfb = NULL;
+    IDirectFBDisplayLayer *layer = NULL;
+    IDirectFBSurface *surface = NULL;
+
+    result = DirectFBCreate(&dfb);
+    if (result != DFB_OK) {
+      LOG(ERROR) << "cannot create DirectFB super interface: "
+          << DirectFBErrorString(result);
+      goto l_exit;
+    }
+
+    result = dfb->GetDisplayLayer(dfb, DLID_PRIMARY, &layer);
+    if (result != DFB_OK) {
+      LOG(ERROR) << "cannot get primary layer: "
+          << DirectFBErrorString(result);
+      goto l_exit;
+    }
+
+    result = layer->GetSurface(layer, &surface);
+    if (result != DFB_OK) {
+      LOG(ERROR) << "cannot get surface of primary layer: "
+          << DirectFBErrorString(result);
+      goto l_exit;
+    }
+
+l_exit:
+    if (result == DFB_OK) {
+      layer_ = layer;
+      surface_ = surface;
+    } else {
+      if (surface) {
+        surface->Release(surface);
+      }
+      if (layer) {
+        layer->Release(layer);
+      }
+    }
+    if (dfb) {
+      dfb->Release(dfb);
     }
   }
+
   virtual ~SurfaceOzoneEglhaisi() {
-    if(native_window_ != NULL)
-    {
-       free(native_window_);
-       native_window_ = NULL;
+    if (surface_) {
+      surface_->Release(surface_);
+    }
+    if (layer_) {
+      layer_->Release(layer_);
     }
   }
 
   virtual intptr_t GetNativeWindow()
   {
-    return (intptr_t)native_window_;
+    return (intptr_t)surface_;
   }
 
   virtual bool OnSwapBuffers()
@@ -85,18 +119,32 @@ class SurfaceOzoneEglhaisi : public SurfaceOzoneEGL {
   }
 
   virtual bool ResizeNativeWindow(const gfx::Size& viewport_size) {
-    if(native_window_ != NULL)
-    {
-       free(native_window_);
-       native_window_ = NULL;
+    DFBResult result, result2;
+
+    result = layer_->SetCooperativeLevel(layer_, DLSCL_ADMINISTRATIVE);
+    if (result != DFB_OK) {
+      LOG(ERROR) << "cannot change cooperative level of layer: "
+          << DirectFBErrorString(result);
+      return false;
     }
-    native_window_ = (fbdev_window *) malloc(sizeof(fbdev_window));
-    if (NULL != native_window_)
-    {
-        native_window_->width  = viewport_size.width();
-        native_window_->height = viewport_size.height();
+
+    result = layer_->SetScreenRectangle(layer_, 0, 0,
+        viewport_size.width(), viewport_size.height());
+    if (result == DFB_UNSUPPORTED) {
+      LOG(WARNING) << "cannot change dimensions of layer as operation is not "
+          << "supported ";
+    } else if (result != DFB_OK) {
+      LOG(ERROR) << "cannot change dimensions of layer: "
+          << DirectFBErrorString(result);
     }
-    return true;
+
+    result2 = layer_->SetCooperativeLevel(layer_, DLSCL_SHARED);
+    if (result2 != DFB_OK) {
+      LOG(ERROR) << "cannot restore cooperative level of layer: "
+          << DirectFBErrorString(result);
+    }
+
+    return (result == DFB_OK);
   }
 
   virtual scoped_ptr<gfx::VSyncProvider> CreateVSyncProvider() {
@@ -107,7 +155,8 @@ class SurfaceOzoneEglhaisi : public SurfaceOzoneEGL {
   }
 
  private:
-  fbdev_window * native_window_;
+  IDirectFBDisplayLayer *layer_;
+  IDirectFBSurface *surface_;
 };
 
 }  // namespace

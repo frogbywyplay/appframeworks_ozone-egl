@@ -34,11 +34,15 @@
         'eglhaisi_vsync_provider.cc',
         'eglhaisi_vsync_provider.h',
       ],
+      'cflags': [
+        '<!@(pkg-config --cflags glesv2 directfb)',
+      ],
       'link_settings': {
-            'libraries': [
-              '-lEGL',
-              '-lGLESv2'
-            ],
+        'libraries': [
+          # We don't need to link with EGL or GLES libraries as they are
+          # dynamically loaded.
+          '<!@(pkg-config --libs directfb)',
+        ],
       },
     },
   ],
