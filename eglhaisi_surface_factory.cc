@@ -156,7 +156,9 @@ l_exit:
 
  private:
   IDirectFBDisplayLayer *layer_;
-  IDirectFBSurface *surface_;
+  /* We use NativeWindowType instead of IDirectFBSurface on purpose as this
+   * will raise type-cast errors if EGL does not use DirectFB surfaces. */
+  NativeWindowType surface_;
 };
 
 }  // namespace
