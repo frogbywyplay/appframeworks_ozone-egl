@@ -14,8 +14,21 @@
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkSurface.h"
 
-#include <directfb.h>
 #include <EGL/egl.h>
+
+#if defined(OZONE_PLATFORM_EGLHAISI_DIRECTFB)
+#include <directfb.h>
+#elif defined(OZONE_PLATFORM_EGLHAISI_NEXUS)
+#include <nexus_display.h>
+#include <nexus_platform.h>
+#include <default_nexus.h>
+#include <nxclient.h>
+
+#define EGLHAISI_WINDOW_WIDTH 1280
+#define EGLHAISI_WINDOW_HEIGTH 720
+#else
+#error unknown backend
+#endif
 
 namespace ui {
 
@@ -51,15 +64,20 @@ void EglHaisiOzoneCanvas::PresentCanvas(const gfx::Rect& damage) {
 
 namespace {
 
+#if defined(OZONE_PLATFORM_EGLHAISI_NEXUS)
+static bool joined_nexus = false;
+static NXPL_PlatformHandle nxpl_handle;
+#endif // OZONE_PLATFORM_EGLHAISI_NEXUS
+
 class SurfaceOzoneEglhaisi : public SurfaceOzoneEGL {
  public:
-  SurfaceOzoneEglhaisi(gfx::AcceleratedWidget window_id)
-      : layer_(NULL),
-        surface_(NULL) {
+  SurfaceOzoneEglhaisi(gfx::AcceleratedWidget window_id) {
+#if defined(OZONE_PLATFORM_EGLHAISI_DIRECTFB)
     DFBResult result;
     IDirectFB *dfb = NULL;
-    IDirectFBDisplayLayer *layer = NULL;
-    IDirectFBSurface *surface = NULL;
+
+    layer_ = NULL;
+    native_window_ = NULL;
 
     result = DirectFBCreate(&dfb);
     if (result != DFB_OK) {
@@ -68,14 +86,14 @@ class SurfaceOzoneEglhaisi : public SurfaceOzoneEGL {
       goto l_exit;
     }
 
-    result = dfb->GetDisplayLayer(dfb, DLID_PRIMARY, &layer);
+    result = dfb->GetDisplayLayer(dfb, DLID_PRIMARY, &layer_);
     if (result != DFB_OK) {
       LOG(ERROR) << "cannot get primary layer: "
           << DirectFBErrorString(result);
       goto l_exit;
     }
 
-    result = layer->GetSurface(layer, &surface);
+    result = layer_->GetSurface(layer_, &native_window_);
     if (result != DFB_OK) {
       LOG(ERROR) << "cannot get surface of primary layer: "
           << DirectFBErrorString(result);
@@ -83,34 +101,55 @@ class SurfaceOzoneEglhaisi : public SurfaceOzoneEGL {
     }
 
 l_exit:
-    if (result == DFB_OK) {
-      layer_ = layer;
-      surface_ = surface;
-    } else {
-      if (surface) {
-        surface->Release(surface);
+    if (result != DFB_OK) {
+      if (native_window_) {
+        native_window_->Release(native_window_);
+        native_window_ = NULL;
       }
-      if (layer) {
-        layer->Release(layer);
+      if (layer_) {
+        layer_->Release(layer_);
+        layer_ = NULL;
       }
     }
     if (dfb) {
       dfb->Release(dfb);
     }
+#elif defined(OZONE_PLATFORM_EGLHAISI_NEXUS)
+    NXPL_NativeWindowInfo window_info;
+
+    window_info.x = window_info.y = 0;
+    window_info.width = EGLHAISI_WINDOW_WIDTH;
+    window_info.height = EGLHAISI_WINDOW_HEIGTH;
+    window_info.stretch = true;
+    window_info.clientID = 1;
+    window_info.zOrder = 0;
+
+    native_window_ = NXPL_CreateNativeWindow(&window_info);
+    if (!native_window_) {
+      LOG(ERROR) << "failed to create Nexus native window";
+      return;
+    }
+#endif
   }
 
   virtual ~SurfaceOzoneEglhaisi() {
-    if (surface_) {
-      surface_->Release(surface_);
+#if defined(OZONE_PLATFORM_EGLHAISI_DIRECTFB)
+    if (native_window_) {
+      native_window_->Release(native_window_);
     }
     if (layer_) {
       layer_->Release(layer_);
     }
+#elif defined(OZONE_PLATFORM_EGLHAISI_NEXUS)
+    if (native_window_) {
+      NXPL_DestroyNativeWindow(native_window_);
+    }
+#endif
   }
 
   virtual intptr_t GetNativeWindow()
   {
-    return (intptr_t)surface_;
+    return (intptr_t)native_window_;
   }
 
   virtual bool OnSwapBuffers()
@@ -119,6 +158,7 @@ l_exit:
   }
 
   virtual bool ResizeNativeWindow(const gfx::Size& viewport_size) {
+#if defined(OZONE_PLATFORM_EGLHAISI_DIRECTFB)
     DFBResult result, result2;
 
     result = layer_->SetCooperativeLevel(layer_, DLSCL_ADMINISTRATIVE);
@@ -145,6 +185,21 @@ l_exit:
     }
 
     return (result == DFB_OK);
+#elif defined(OZONE_PLATFORM_EGLHAISI_NEXUS)
+    if (native_window_) {
+      NXPL_NativeWindowInfo window_info;
+
+      window_info.x = window_info.y = 0;
+      window_info.width = viewport_size.width();
+      window_info.height = viewport_size.height();
+      window_info.stretch = true;
+      window_info.clientID = 1;
+      window_info.zOrder = 0;
+      NXPL_UpdateNativeWindow(native_window_, &window_info);
+    }
+
+    return true;
+#endif
   }
 
   virtual scoped_ptr<gfx::VSyncProvider> CreateVSyncProvider() {
@@ -155,19 +210,57 @@ l_exit:
   }
 
  private:
+#if defined(OZONE_PLATFORM_EGLHAISI_DIRECTFB)
   IDirectFBDisplayLayer *layer_;
+#endif
   /* We use NativeWindowType instead of IDirectFBSurface on purpose as this
    * will raise type-cast errors if EGL does not use DirectFB surfaces. */
-  NativeWindowType surface_;
+  NativeWindowType native_window_;
 };
 
 }  // namespace
 
 SurfaceFactoryEglhaisi::SurfaceFactoryEglhaisi()
 {
+#if defined(OZONE_PLATFORM_EGLHAISI_NEXUS)
+  /* TODO: registration must be moved to the hosting application. */
+  NEXUS_Error nexus_err;
+  struct NxClient_JoinSettings jsets;
+
+  NxClient_GetDefaultJoinSettings(&jsets);
+  strncpy(jsets.name, "browser", sizeof(jsets.name));
+  jsets.name[sizeof(jsets.name) - 1] = '\0';
+  jsets.timeout = 60;
+  jsets.session = 1;
+  jsets.ignoreStandbyRequest = true;
+  jsets.mode = NEXUS_ClientMode_eProtected;
+  strncpy((char *)jsets.certificate.data, "nxclient_certificate", sizeof(jsets.certificate.data));
+  jsets.certificate.data[sizeof(jsets.certificate.data) - 1] = '\0';
+  jsets.certificate.length = strlen((char *)jsets.certificate.data);
+
+  nexus_err = NxClient_Join(&jsets);
+  if (nexus_err != NEXUS_SUCCESS) {
+    LOG(ERROR) << "failed to join Nexus";
+    return;
+  }
+
+  NXPL_RegisterNexusDisplayPlatform(&nxpl_handle, EGL_DEFAULT_DISPLAY);
+#endif // OZONE_PLATFORM_EGLHAISI_NEXUS
 }
+
 SurfaceFactoryEglhaisi::~SurfaceFactoryEglhaisi()
 {
+#if defined(OZONE_PLATFORM_EGLHAISI_NEXUS)
+  if (nxpl_handle) {
+    NXPL_UnregisterNexusDisplayPlatform(nxpl_handle);
+    nxpl_handle = NULL;
+  }
+
+  if (joined_nexus) {
+    NxClient_Uninit();
+    joined_nexus = false;
+  }
+#endif // OZONE_PLATFORM_EGLHAISI_NEXUS
 }
 
 intptr_t SurfaceFactoryEglhaisi::GetNativeDisplay() {
@@ -204,6 +297,7 @@ bool SurfaceFactoryEglhaisi::LoadEGLGLES2Bindings(
     AddGLLibraryCallback add_gl_library,
     SetGLGetProcAddressProcCallback setprocaddress) {
   base::NativeLibraryLoadError error;
+#if defined(OZONE_PLATFORM_EGLHAISI_DIRECTFB)
   base::NativeLibrary gles_library = base::LoadNativeLibrary(
     base::FilePath("libGLESv2.so.2"), &error);
 
@@ -233,9 +327,32 @@ bool SurfaceFactoryEglhaisi::LoadEGLGLES2Bindings(
     return false;
   }
 
-  setprocaddress.Run(get_proc_address);
   add_gl_library.Run(egl_library);
   add_gl_library.Run(gles_library);
+#elif defined(OZONE_PLATFORM_EGLHAISI_NEXUS)
+  base::NativeLibrary library = base::LoadNativeLibrary(
+    base::FilePath("libv3ddriver.so"), &error);
+
+  if (!library) {
+    LOG(WARNING) << "Failed to load v3ddriver library: " << error.ToString();
+    return false;
+  }
+
+  GLGetProcAddressProc get_proc_address =
+      reinterpret_cast<GLGetProcAddressProc>(
+          base::GetFunctionPointerFromNativeLibrary(
+              library, "eglGetProcAddress"));
+
+  if (!get_proc_address) {
+    LOG(ERROR) << "eglGetProcAddress not found.";
+    base::UnloadNativeLibrary(library);
+    return false;
+  }
+
+  add_gl_library.Run(library);
+#endif
+
+  setprocaddress.Run(get_proc_address);
   return true;
 }
 
