@@ -24,7 +24,7 @@
 #include <nxclient.h>
 
 #define EGLHAISI_WINDOW_WIDTH 1280
-#define EGLHAISI_WINDOW_HEIGTH 720
+#define EGLHAISI_WINDOW_HEIGHT 720
 #else
 #error unknown backend
 #endif
@@ -118,7 +118,7 @@ l_exit:
 
     window_info.x = window_info.y = 0;
     window_info.width = EGLHAISI_WINDOW_WIDTH;
-    window_info.height = EGLHAISI_WINDOW_HEIGTH;
+    window_info.height = EGLHAISI_WINDOW_HEIGHT;
     window_info.stretch = true;
     window_info.clientID = 1;
     window_info.zOrder = 0;
