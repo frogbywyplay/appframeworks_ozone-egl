@@ -1,7 +1,6 @@
 #include "base/files/file_path.h"
 #include "base/native_library.h"
 #include "ui/ozone/platform/eglhaisi/eglhaisi_surface_factory.h"
-#include "ui/ozone/platform/eglhaisi/eglhaisi_vsync_provider.h"
 #include "ui/ozone/public/surface_ozone_egl.h"
 #include "ui/ozone/public/surface_factory_ozone.h"
 #include "ui/gfx/vsync_provider.h"
@@ -42,7 +41,7 @@ class EglHaisiOzoneCanvas: public ui::SurfaceOzoneCanvas {
   }
   virtual void PresentCanvas(const gfx::Rect& damage) override;
   virtual scoped_ptr<gfx::VSyncProvider> CreateVSyncProvider() override {
-    return scoped_ptr<gfx::VSyncProvider>();
+    return nullptr;
   }
   virtual skia::RefPtr<SkSurface> GetSurface() override {
     return surface_;
@@ -203,7 +202,7 @@ l_exit:
   }
 
   virtual scoped_ptr<gfx::VSyncProvider> CreateVSyncProvider() {
-    return scoped_ptr<gfx::VSyncProvider>(new EglhaisiVSyncProvider());
+    return nullptr;
   }
 
   virtual void OnSwapBuffersAsync(const SwapCompletionCallback& callback) {
