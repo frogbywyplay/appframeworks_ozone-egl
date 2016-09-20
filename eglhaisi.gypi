@@ -48,7 +48,6 @@
           'libraries': [
             # We need to link with the v3driver library even if it's
             # dynamically loaded as the nxpl library needs symbols from it.
-            '-lnxclient',
             '-lnxpl',
             '-lv3ddriver',
             '<!@(pkg-config --libs nexus)',

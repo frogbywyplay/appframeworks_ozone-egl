@@ -64,7 +64,6 @@ void EglHaisiOzoneCanvas::PresentCanvas(const gfx::Rect& damage) {
 namespace {
 
 #if defined(OZONE_PLATFORM_EGLHAISI_NEXUS)
-static bool joined_nexus = false;
 static NXPL_PlatformHandle nxpl_handle;
 #endif // OZONE_PLATFORM_EGLHAISI_NEXUS
 
@@ -222,27 +221,6 @@ l_exit:
 SurfaceFactoryEglhaisi::SurfaceFactoryEglhaisi()
 {
 #if defined(OZONE_PLATFORM_EGLHAISI_NEXUS)
-  /* TODO: registration must be moved to the hosting application. */
-  NEXUS_Error nexus_err;
-  struct NxClient_JoinSettings jsets;
-
-  NxClient_GetDefaultJoinSettings(&jsets);
-  strncpy(jsets.name, "browser", sizeof(jsets.name));
-  jsets.name[sizeof(jsets.name) - 1] = '\0';
-  jsets.timeout = 60;
-  jsets.session = 1;
-  jsets.ignoreStandbyRequest = true;
-  jsets.mode = NEXUS_ClientMode_eProtected;
-  strncpy((char *)jsets.certificate.data, "nxclient_certificate", sizeof(jsets.certificate.data));
-  jsets.certificate.data[sizeof(jsets.certificate.data) - 1] = '\0';
-  jsets.certificate.length = strlen((char *)jsets.certificate.data);
-
-  nexus_err = NxClient_Join(&jsets);
-  if (nexus_err != NEXUS_SUCCESS) {
-    LOG(ERROR) << "failed to join Nexus";
-    return;
-  }
-
   NXPL_RegisterNexusDisplayPlatform(&nxpl_handle, EGL_DEFAULT_DISPLAY);
 #endif // OZONE_PLATFORM_EGLHAISI_NEXUS
 }
@@ -253,11 +231,6 @@ SurfaceFactoryEglhaisi::~SurfaceFactoryEglhaisi()
   if (nxpl_handle) {
     NXPL_UnregisterNexusDisplayPlatform(nxpl_handle);
     nxpl_handle = NULL;
-  }
-
-  if (joined_nexus) {
-    NxClient_Uninit();
-    joined_nexus = false;
   }
 #endif // OZONE_PLATFORM_EGLHAISI_NEXUS
 }
