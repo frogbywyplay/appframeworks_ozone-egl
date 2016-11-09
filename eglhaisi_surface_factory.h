@@ -5,7 +5,6 @@
 #ifndef UI_OZONE_PLATFORM_EGLHAISI_EGLHAISI_SURFACE_FACTORY_H_
 #define UI_OZONE_PLATFORM_EGLHAISI_EGLHAISI_SURFACE_FACTORY_H_
 
-#include "base/memory/scoped_ptr.h"
 #include "ui/ozone/public/surface_factory_ozone.h"
 
 namespace gfx {
@@ -21,9 +20,9 @@ class SurfaceFactoryEglhaisi : public ui::SurfaceFactoryOzone {
 
   // SurfaceFactoryOzone:
   virtual intptr_t GetNativeDisplay();
-  virtual scoped_ptr<SurfaceOzoneEGL> CreateEGLSurfaceForWidget(
+  virtual std::unique_ptr<SurfaceOzoneEGL> CreateEGLSurfaceForWidget(
       gfx::AcceleratedWidget widget);
-  virtual scoped_ptr<SurfaceOzoneCanvas> CreateCanvasForWidget(
+  virtual std::unique_ptr<SurfaceOzoneCanvas> CreateCanvasForWidget(
       gfx::AcceleratedWidget widget);
   virtual const int32_t* GetEGLSurfaceProperties(
       const int32_t* desired_list);

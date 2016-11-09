@@ -53,9 +53,9 @@ namespace ui {
           return views::DesktopWindowTreeHost::Create(native_widget_delegate, desktop_native_widget_aura);
         }
 
-        gfx::Screen* CreateDesktopScreen() override {
+        display::Screen* CreateDesktopScreen() override {
           aura::TestScreen* screen = aura::TestScreen::Create(gfx::Size());
-          gfx::Screen::SetScreenInstance(screen);
+          display::Screen::SetScreenInstance(screen);
           return screen;
         }
     };
@@ -152,7 +152,7 @@ namespace ui {
         EventFactoryEvdev* event_factory_;
         gfx::Rect bounds_;
         gfx::AcceleratedWidget window_id_;
-        scoped_ptr<EglhaisiImeController> ime_controller_;
+        std::unique_ptr<EglhaisiImeController> ime_controller_;
 
         DISALLOW_COPY_AND_ASSIGN(EglhaisiWindow);
     };
@@ -187,8 +187,8 @@ namespace ui {
           return gpu_platform_support_host_.get();
         }
 
-        virtual scoped_ptr<ui::NativeDisplayDelegate> CreateNativeDisplayDelegate() {
-          return scoped_ptr<ui::NativeDisplayDelegate>(new NativeDisplayDelegateOzone());
+        virtual std::unique_ptr<ui::NativeDisplayDelegate> CreateNativeDisplayDelegate() {
+          return std::unique_ptr<ui::NativeDisplayDelegate>(new NativeDisplayDelegateOzone());
         }
 
         base::ScopedFD OpenClientNativePixmapDevice() const {
@@ -198,7 +198,7 @@ namespace ui {
         virtual void InitializeUI() {
           device_manager_ = CreateDeviceManager();
           KeyboardLayoutEngineManager::SetKeyboardLayoutEngine(
-            make_scoped_ptr(new StubKeyboardLayoutEngine()));
+            std::unique_ptr<KeyboardLayoutEngine>(new StubKeyboardLayoutEngine()));
           event_factory_ozone_.reset(
             new EventFactoryEvdev(NULL, device_manager_.get(), KeyboardLayoutEngineManager::GetKeyboardLayoutEngine()));
           overlay_manager_.reset(new StubOverlayManager());
@@ -217,25 +217,25 @@ namespace ui {
           return event_factory_ozone_->input_controller();
         }
 
-        virtual scoped_ptr<SystemInputInjector> CreateSystemInputInjector() {
+        virtual std::unique_ptr<SystemInputInjector> CreateSystemInputInjector() {
           return event_factory_ozone_->CreateSystemInputInjector();
         }
 
-        virtual scoped_ptr<PlatformWindow> CreatePlatformWindow(
+        virtual std::unique_ptr<PlatformWindow> CreatePlatformWindow(
           PlatformWindowDelegate* delegate,
           const gfx::Rect& bounds) {
-          return make_scoped_ptr<PlatformWindow>(new EglhaisiWindow(delegate, event_factory_ozone_.get(), bounds));
+          return std::unique_ptr<PlatformWindow>(new EglhaisiWindow(delegate, event_factory_ozone_.get(), bounds));
         }
 
       private:
 
-        scoped_ptr<DeviceManager> device_manager_;
-        scoped_ptr<EventFactoryEvdev> event_factory_ozone_;
-        scoped_ptr<SurfaceFactoryEglhaisi> surface_factory_ozone_;
-        scoped_ptr<CursorFactoryOzone> cursor_factory_ozone_;
-        scoped_ptr<GpuPlatformSupport> gpu_platform_support_;
-        scoped_ptr<GpuPlatformSupportHost> gpu_platform_support_host_;
-        scoped_ptr<OverlayManagerOzone> overlay_manager_;
+        std::unique_ptr<DeviceManager> device_manager_;
+        std::unique_ptr<EventFactoryEvdev> event_factory_ozone_;
+        std::unique_ptr<SurfaceFactoryEglhaisi> surface_factory_ozone_;
+        std::unique_ptr<CursorFactoryOzone> cursor_factory_ozone_;
+        std::unique_ptr<GpuPlatformSupport> gpu_platform_support_;
+        std::unique_ptr<GpuPlatformSupportHost> gpu_platform_support_host_;
+        std::unique_ptr<OverlayManagerOzone> overlay_manager_;
         EglhaisiDesktopFactoryOzone desktop_factory_;
 
         DISALLOW_COPY_AND_ASSIGN(OzonePlatformEglhaisi);

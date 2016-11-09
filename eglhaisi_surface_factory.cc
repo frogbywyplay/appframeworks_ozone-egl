@@ -41,7 +41,7 @@ class EglHaisiOzoneCanvas: public ui::SurfaceOzoneCanvas {
     return skia::SharePtr<SkCanvas>(surface_->getCanvas());
   }
   virtual void PresentCanvas(const gfx::Rect& damage) override;
-  virtual scoped_ptr<gfx::VSyncProvider> CreateVSyncProvider() override {
+  virtual std::unique_ptr<gfx::VSyncProvider> CreateVSyncProvider() override {
     return nullptr;
   }
   virtual skia::RefPtr<SkSurface> GetSurface() override {
@@ -300,7 +300,7 @@ l_exit:
 #endif
   }
 
-  virtual scoped_ptr<gfx::VSyncProvider> CreateVSyncProvider() {
+  virtual std::unique_ptr<gfx::VSyncProvider> CreateVSyncProvider() {
     return nullptr;
   }
 
@@ -347,14 +347,14 @@ intptr_t SurfaceFactoryEglhaisi::GetNativeDisplay() {
   return (intptr_t)EGL_DEFAULT_DISPLAY;
 }
 
-scoped_ptr<SurfaceOzoneEGL> SurfaceFactoryEglhaisi::CreateEGLSurfaceForWidget(
+std::unique_ptr<SurfaceOzoneEGL> SurfaceFactoryEglhaisi::CreateEGLSurfaceForWidget(
     gfx::AcceleratedWidget widget) {
-  return make_scoped_ptr<SurfaceOzoneEGL>(new SurfaceOzoneEglhaisi(widget));
+  return std::unique_ptr<SurfaceOzoneEGL>(new SurfaceOzoneEglhaisi(widget));
 }
 
-scoped_ptr<SurfaceOzoneCanvas> SurfaceFactoryEglhaisi::CreateCanvasForWidget(
+std::unique_ptr<SurfaceOzoneCanvas> SurfaceFactoryEglhaisi::CreateCanvasForWidget(
     gfx::AcceleratedWidget widget) {
-  return make_scoped_ptr<SurfaceOzoneCanvas>(new EglHaisiOzoneCanvas());
+  return std::unique_ptr<SurfaceOzoneCanvas>(new EglHaisiOzoneCanvas());
 }
 
 const int32_t* SurfaceFactoryEglhaisi::GetEGLSurfaceProperties(
