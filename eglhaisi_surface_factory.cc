@@ -15,14 +15,16 @@
 
 #include <EGL/egl.h>
 
-#if defined(OZONE_PLATFORM_EGLHAISI_DIRECTFB)
+#if defined(OZONE_PLATFORM_EGLHAISI_DIRECTFB) || defined(OZONE_PLATFORM_EGLHAISI_MSTAR)
 #include <directfb.h>
+#if defined(OZONE_PLATFORM_EGLHAISI_MSTAR)
+#include <mi_common.h>
+#endif
 #elif defined(OZONE_PLATFORM_EGLHAISI_NEXUS)
 #include <nexus_display.h>
 #include <nexus_platform.h>
 #include <default_nexus.h>
 #include <nxclient.h>
-
 #define EGLHAISI_WINDOW_WIDTH 1280
 #define EGLHAISI_WINDOW_HEIGHT 720
 #else
@@ -70,12 +72,21 @@ static NXPL_PlatformHandle nxpl_handle;
 class SurfaceOzoneEglhaisi : public SurfaceOzoneEGL {
  public:
   SurfaceOzoneEglhaisi(gfx::AcceleratedWidget window_id) {
-#if defined(OZONE_PLATFORM_EGLHAISI_DIRECTFB)
+#if defined(OZONE_PLATFORM_EGLHAISI_DIRECTFB) || defined(OZONE_PLATFORM_EGLHAISI_MSTAR)
     DFBResult result;
     IDirectFB *dfb = NULL;
 
     layer_ = NULL;
     native_window_ = NULL;
+
+#if defined(OZONE_PLATFORM_EGLHAISI_MSTAR)
+    result = DirectFBInit(0, NULL);
+    if (result != DFB_OK) {
+      LOG(ERROR) << "cannot init DirectFB: "
+          << DirectFBErrorString(result);
+      goto l_exit;
+    }
+#endif
 
     result = DirectFBCreate(&dfb);
     if (result != DFB_OK) {
@@ -91,12 +102,54 @@ class SurfaceOzoneEglhaisi : public SurfaceOzoneEGL {
       goto l_exit;
     }
 
+#if defined(OZONE_PLATFORM_EGLHAISI_MSTAR)
+    // Setup layer
+    layer_->SetCooperativeLevel(layer_, DLSCL_ADMINISTRATIVE);
+    layer_->SetOpacity(layer_, 0xff);
+    layer_->SetBackgroundMode(layer_, DLBM_COLOR);
+    layer_->SetBackgroundColor(layer_, 0x00, 0x00, 0x00, 0x00);
+
+    DFBDisplayLayerConfig dlc;
+    layer_->GetConfiguration(layer_, &dlc);
+    dlc.flags = (DFBDisplayLayerConfigFlags)(DLCONF_OPTIONS|DLCONF_BUFFERMODE);
+    dlc.options = (DFBDisplayLayerOptions)(DLOP_ALPHACHANNEL);
+    dlc.buffermode = DLBM_BACKVIDEO;
+    layer_->SetConfiguration( layer_, &dlc );
+
+    // Fill the window description.
+    DFBWindowDescription  desc;
+    desc.flags        = (DFBWindowDescriptionFlags)(DWDESC_CAPS | DWDESC_SURFACE_CAPS);
+    desc.caps         = (DFBWindowCapabilities)(DWCAPS_ALPHACHANNEL| DWCAPS_DOUBLEBUFFER);
+    desc.surface_caps = DSCAPS_VIDEOONLY;
+
+    // Create the window.
+    window_ = NULL;
+    result = layer_->CreateWindow(layer_, &desc, &window_);
+    if (result != DFB_OK) {
+      LOG(ERROR) << "cannot create window: "
+          << DirectFBErrorString(result);
+      goto l_exit;
+    }
+
+    window_->SetOpacity( window_, 0xff );
+    window_->SetOptions(window_, (DFBWindowOptions)(DWOP_ALPHACHANNEL));
+    window_->SetStackingClass(window_, DWSC_MIDDLE);
+    window_->RaiseToTop(window_);
+
+    result = window_->GetSurface(window_, &native_window_);
+    if (result != DFB_OK) {
+      LOG(ERROR) << "cannot get surface of window: "
+          << DirectFBErrorString(result);
+      goto l_exit;
+    }
+#else
     result = layer_->GetSurface(layer_, &native_window_);
     if (result != DFB_OK) {
       LOG(ERROR) << "cannot get surface of primary layer: "
           << DirectFBErrorString(result);
       goto l_exit;
     }
+#endif
 
 l_exit:
     if (result != DFB_OK) {
@@ -108,10 +161,18 @@ l_exit:
         layer_->Release(layer_);
         layer_ = NULL;
       }
+#if defined(OZONE_PLATFORM_EGLHAISI_MSTAR)
+      if (window_) {
+        window_->Release(window_);
+      }
+#endif
     }
+#if defined(OZONE_PLATFORM_EGLHAISI_DIRECTFB)
     if (dfb) {
       dfb->Release(dfb);
     }
+#endif
+
 #elif defined(OZONE_PLATFORM_EGLHAISI_NEXUS)
     NXPL_NativeWindowInfo window_info;
 
@@ -131,13 +192,18 @@ l_exit:
   }
 
   virtual ~SurfaceOzoneEglhaisi() {
-#if defined(OZONE_PLATFORM_EGLHAISI_DIRECTFB)
+#if defined(OZONE_PLATFORM_EGLHAISI_DIRECTFB) || defined(OZONE_PLATFORM_EGLHAISI_MSTAR)
     if (native_window_) {
       native_window_->Release(native_window_);
     }
     if (layer_) {
       layer_->Release(layer_);
     }
+#if defined(OZONE_PLATFORM_EGLHAISI_MSTAR)
+    if (window_) {
+      window_->Release(window_);
+    }
+#endif
 #elif defined(OZONE_PLATFORM_EGLHAISI_NEXUS)
     if (native_window_) {
       NXPL_DestroyNativeWindow(native_window_);
@@ -156,7 +222,7 @@ l_exit:
   }
 
   virtual bool ResizeNativeWindow(const gfx::Size& viewport_size) {
-#if defined(OZONE_PLATFORM_EGLHAISI_DIRECTFB)
+#if defined(OZONE_PLATFORM_EGLHAISI_DIRECTFB) || defined (OZONE_PLATFORM_EGLHAISI_MSTAR)
     DFBResult result, result2;
 
     result = layer_->SetCooperativeLevel(layer_, DLSCL_ADMINISTRATIVE);
@@ -166,6 +232,7 @@ l_exit:
       return false;
     }
 
+#if defined(OZONE_PLATFORM_EGLHAISI_DIRECTFB)
     result = layer_->SetScreenRectangle(layer_, 0, 0,
         viewport_size.width(), viewport_size.height());
     if (result == DFB_UNSUPPORTED) {
@@ -176,10 +243,43 @@ l_exit:
           << DirectFBErrorString(result);
     }
 
+#elif defined (OZONE_PLATFORM_EGLHAISI_MSTAR)
+
+    // Overwrite layer configuration
+    // as mstar drivers doesn't support IDirectFBDisplayLayer::SetScreenRectangle
+    DFBDisplayLayerConfig config;
+    result = layer_->GetConfiguration(layer_, &config);
+    if (result != DFB_OK) {
+        LOG(ERROR) << "cannot get configuration of layer: "
+            << DirectFBErrorString(result);
+    }
+
+    // Set proper width/height
+    config.width = viewport_size.width();
+    config.height = viewport_size.height();
+
+    result = layer_->SetConfiguration(layer_, &config);
+    if (result != DFB_OK) {
+        LOG(ERROR) << "cannot set configuration of layer: "
+            << DirectFBErrorString(result);
+    }
+
+    // Also update window bounds
+    result = window_->SetBounds(window_, 0, 0,
+        viewport_size.width(), viewport_size.height());
+    if (result == DFB_UNSUPPORTED) {
+        LOG(WARNING) << "cannot change dimensions of window as operation is not "
+            << "supported ";
+    } else if (result != DFB_OK) {
+        LOG(ERROR) << "cannot change dimensions of window: "
+            << DirectFBErrorString(result);
+    }
+#endif
+
     result2 = layer_->SetCooperativeLevel(layer_, DLSCL_SHARED);
     if (result2 != DFB_OK) {
       LOG(ERROR) << "cannot restore cooperative level of layer: "
-          << DirectFBErrorString(result);
+          << DirectFBErrorString(result2);
     }
 
     return (result == DFB_OK);
@@ -195,7 +295,8 @@ l_exit:
       window_info.zOrder = 0;
       NXPL_UpdateNativeWindow(native_window_, &window_info);
     }
-
+    return true;
+ #else
     return true;
 #endif
   }
@@ -208,8 +309,12 @@ l_exit:
   }
 
  private:
-#if defined(OZONE_PLATFORM_EGLHAISI_DIRECTFB)
+#if defined(OZONE_PLATFORM_EGLHAISI_DIRECTFB) || defined(OZONE_PLATFORM_EGLHAISI_MSTAR)
   IDirectFBDisplayLayer *layer_;
+#if defined(OZONE_PLATFORM_EGLHAISI_MSTAR)
+  // Use window for MSTAR
+  IDirectFBWindow *window_;
+#endif
 #endif
   /* We use NativeWindowType instead of IDirectFBSurface on purpose as this
    * will raise type-cast errors if EGL does not use DirectFB surfaces. */
@@ -269,7 +374,7 @@ bool SurfaceFactoryEglhaisi::LoadEGLGLES2Bindings(
     AddGLLibraryCallback add_gl_library,
     SetGLGetProcAddressProcCallback setprocaddress) {
   base::NativeLibraryLoadError error;
-#if defined(OZONE_PLATFORM_EGLHAISI_DIRECTFB)
+#if defined(OZONE_PLATFORM_EGLHAISI_DIRECTFB) || defined (OZONE_PLATFORM_EGLHAISI_MSTAR)
   base::NativeLibrary gles_library = base::LoadNativeLibrary(
     base::FilePath("libGLESv2.so.2"), &error);
 
