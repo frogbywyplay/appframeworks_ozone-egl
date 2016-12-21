@@ -54,6 +54,20 @@
           ],
         },
       }],
+      ['ozone_platform_eglhaisi_backend=="mstar"', {
+        'defines': ['OZONE_PLATFORM_EGLHAISI_MSTAR=1'],
+        'cflags': [
+          '<!@(pkg-config pkg-config --cflags mi glesv2)',
+        ],
+        'link_settings': {
+          'libraries': [
+            # We don't need to link with EGL or GLES libraries as they are
+            # dynamically loaded.
+            '-lz',
+            '<!@(pkg-config --libs mi directfb)',
+          ],
+        },
+      }],
     ],
     'sources': [
       'ozone_platform_eglhaisi.cc',
