@@ -24,7 +24,6 @@
 #include <nexus_display.h>
 #include <nexus_platform.h>
 #include <default_nexus.h>
-#include <nxclient.h>
 #define EGLHAISI_WINDOW_WIDTH 1280
 #define EGLHAISI_WINDOW_HEIGHT 720
 #else
