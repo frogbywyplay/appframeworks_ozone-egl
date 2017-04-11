@@ -32,36 +32,6 @@
 
 namespace ui {
 
-class EglHaisiOzoneCanvas: public ui::SurfaceOzoneCanvas {
- public:
-  EglHaisiOzoneCanvas();
-  virtual ~EglHaisiOzoneCanvas();
-  virtual void ResizeCanvas(const gfx::Size& viewport_size) override;
-  virtual skia::RefPtr<SkCanvas> GetCanvas() {
-    return skia::SharePtr<SkCanvas>(surface_->getCanvas());
-  }
-  virtual void PresentCanvas(const gfx::Rect& damage) override;
-  virtual std::unique_ptr<gfx::VSyncProvider> CreateVSyncProvider() override {
-    return nullptr;
-  }
-  virtual skia::RefPtr<SkSurface> GetSurface() override {
-    return surface_;
-  }
- private:
-  skia::RefPtr<SkSurface> surface_;
-};
-
-EglHaisiOzoneCanvas::EglHaisiOzoneCanvas() {
-}
-EglHaisiOzoneCanvas::~EglHaisiOzoneCanvas() {
-}
-
-void EglHaisiOzoneCanvas::ResizeCanvas(const gfx::Size& viewport_size) {
-}
-
-void EglHaisiOzoneCanvas::PresentCanvas(const gfx::Rect& damage) {
-}
-
 namespace {
 
 #if defined(OZONE_PLATFORM_EGLHAISI_NEXUS)
@@ -350,27 +320,6 @@ intptr_t SurfaceFactoryEglhaisi::GetNativeDisplay() {
 std::unique_ptr<SurfaceOzoneEGL> SurfaceFactoryEglhaisi::CreateEGLSurfaceForWidget(
     gfx::AcceleratedWidget widget) {
   return std::unique_ptr<SurfaceOzoneEGL>(new SurfaceOzoneEglhaisi(widget));
-}
-
-std::unique_ptr<SurfaceOzoneCanvas> SurfaceFactoryEglhaisi::CreateCanvasForWidget(
-    gfx::AcceleratedWidget widget) {
-  return std::unique_ptr<SurfaceOzoneCanvas>(new EglHaisiOzoneCanvas());
-}
-
-const int32_t* SurfaceFactoryEglhaisi::GetEGLSurfaceProperties(
-    const int32_t* desired_list) {
-  static const EGLint kConfigAttribs[] = {
-    EGL_BUFFER_SIZE, 32,
-    EGL_ALPHA_SIZE, 8,
-    EGL_BLUE_SIZE, 8,
-    EGL_GREEN_SIZE, 8,
-    EGL_RED_SIZE, 8,
-    EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
-    EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
-    EGL_NONE
-  };
-
-  return kConfigAttribs;
 }
 
 bool SurfaceFactoryEglhaisi::LoadEGLGLES2Bindings(
