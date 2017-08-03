@@ -35,7 +35,7 @@ namespace ui {
 namespace {
 
 #if defined(OZONE_PLATFORM_EGLHAISI_NEXUS)
-static NXPL_PlatformHandle nxpl_handle;
+static NXPL_PlatformHandle nxpl_handle = 0;
 #endif // OZONE_PLATFORM_EGLHAISI_NEXUS
 
 class SurfaceOzoneEglhaisi : public SurfaceOzoneEGL {
@@ -143,7 +143,9 @@ l_exit:
 #endif
 
 #elif defined(OZONE_PLATFORM_EGLHAISI_NEXUS)
-    NXPL_NativeWindowInfo window_info;
+    NXPL_NativeWindowInfoEXT window_info;
+
+    NXPL_GetDefaultNativeWindowInfoEXT(&window_info);
 
     window_info.x = window_info.y = 0;
     window_info.width = EGLHAISI_WINDOW_WIDTH;
@@ -152,7 +154,7 @@ l_exit:
     window_info.clientID = 1;
     window_info.zOrder = 0;
 
-    native_window_ = NXPL_CreateNativeWindow(&window_info);
+    native_window_ = NXPL_CreateNativeWindowEXT(&window_info);
     if (!native_window_) {
       LOG(ERROR) << "failed to create Nexus native window";
       return;
@@ -254,7 +256,9 @@ l_exit:
     return (result == DFB_OK);
 #elif defined(OZONE_PLATFORM_EGLHAISI_NEXUS)
     if (native_window_) {
-      NXPL_NativeWindowInfo window_info;
+      NXPL_NativeWindowInfoEXT window_info;
+
+      NXPL_GetDefaultNativeWindowInfoEXT(&window_info);
 
       window_info.x = window_info.y = 0;
       window_info.width = viewport_size.width();
@@ -262,7 +266,8 @@ l_exit:
       window_info.stretch = true;
       window_info.clientID = 1;
       window_info.zOrder = 0;
-      NXPL_UpdateNativeWindow(native_window_, &window_info);
+
+      NXPL_UpdateNativeWindowEXT(native_window_, &window_info);
     }
     return true;
  #else
