@@ -12,6 +12,8 @@
     ],
     # Must be set. Supported values are directfb or nexus.
     'ozone_platform_eglhaisi_backend%': 'directfb',
+    # Nexus specific variable for zorder of graphical plan
+    'ozone_platform_eglhaisi_nexus_zorder%': '0',
   },
   'targets': [{
     'target_name': 'ozone_platform_eglhaisi',
@@ -42,7 +44,10 @@
         },
       }],
       ['ozone_platform_eglhaisi_backend=="nexus"', {
-        'defines': ['OZONE_PLATFORM_EGLHAISI_NEXUS=1'],
+        'defines': [
+	  'OZONE_PLATFORM_EGLHAISI_NEXUS=1',
+	  'OZONE_PLATFORM_EGLHAISI_NEXUS_ZORDER=<(ozone_platform_eglhaisi_nexus_zorder)'
+	],
         'cflags': [
           '<!@(pkg-config pkg-config --cflags nexus)',
         ],

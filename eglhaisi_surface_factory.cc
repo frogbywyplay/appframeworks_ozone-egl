@@ -26,6 +26,9 @@
 #include <default_nexus.h>
 #define EGLHAISI_WINDOW_WIDTH 1280
 #define EGLHAISI_WINDOW_HEIGHT 720
+#if !defined(OZONE_PLATFORM_EGLHAISI_NEXUS_ZORDER)
+#define OZONE_PLATFORM_EGLHAISI_NEXUS_ZORDER (0)
+#endif
 #else
 #error unknown backend
 #endif
@@ -152,7 +155,7 @@ l_exit:
     window_info.height = EGLHAISI_WINDOW_HEIGHT;
     window_info.stretch = true;
     window_info.clientID = 1;
-    window_info.zOrder = 0;
+    window_info.zOrder = OZONE_PLATFORM_EGLHAISI_NEXUS_ZORDER;
 
     native_window_ = NXPL_CreateNativeWindowEXT(&window_info);
     if (!native_window_) {
