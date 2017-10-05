@@ -4,7 +4,7 @@
 #include "ui/ozone/public/surface_ozone_egl.h"
 #include "ui/ozone/public/surface_factory_ozone.h"
 #include "ui/gfx/vsync_provider.h"
-
+#include "ui/ozone/public/native_pixmap.h"
 
 
 #include "ui/ozone/public/surface_ozone_canvas.h"
@@ -315,6 +315,71 @@ l_exit:
   NativeWindowType native_window_;
 };
 
+#if defined(OZONE_PLATFORM_EGLHAISI_NEXUS)
+  class EglhaisiPixmap : public NativePixmap {
+    public:
+      explicit EglhaisiPixmap(
+	gfx::Size size,
+	EGLNativePixmapType egl_surface,
+	NEXUS_SurfaceHandle native_surface)
+	: size_(size),
+	  egl_surface_(egl_surface),
+	  native_surface_(native_surface) {
+      }
+
+      void* /* EGLClientBuffer */ GetEGLClientBuffer() const override {
+	return egl_surface_;
+      }
+
+      void* GetNativeSurface() const override {
+	return native_surface_;
+      }
+
+      int GetDmaBufFd() const override {
+	return -1;
+      }
+
+      int GetDmaBufPitch() const override {
+	return 0;
+      }
+
+      gfx::BufferFormat GetBufferFormat() const override {
+	return gfx::BufferFormat::RGBA_8888;
+      }
+
+      gfx::Size GetBufferSize() const override {
+	return size_;
+      }
+
+      bool ScheduleOverlayPlane(gfx::AcceleratedWidget widget,
+				int plane_z_order,
+				gfx::OverlayTransform plane_transform,
+				const gfx::Rect& display_bounds,
+				const gfx::RectF& crop_rect) override {
+	return true;
+      }
+
+      void SetProcessingCallback(
+	const NativePixmap::ProcessingCallback& processing_callback) override {
+      }
+
+      gfx::NativePixmapHandle ExportHandle() override {
+	return gfx::NativePixmapHandle();
+      }
+
+    private:
+      ~EglhaisiPixmap() override {
+	NXPL_DestroyCompatiblePixmap(nxpl_handle, egl_surface_);
+      }
+
+      gfx::Size size_;
+      EGLNativePixmapType egl_surface_;
+      NEXUS_SurfaceHandle native_surface_;
+
+      DISALLOW_COPY_AND_ASSIGN(EglhaisiPixmap);
+  };
+#endif
+
 }  // namespace
 
 SurfaceFactoryEglhaisi::SurfaceFactoryEglhaisi()
@@ -405,5 +470,36 @@ bool SurfaceFactoryEglhaisi::LoadEGLGLES2Bindings(
   setprocaddress.Run(get_proc_address);
   return true;
 }
+
+scoped_refptr<NativePixmap> SurfaceFactoryEglhaisi::CreateNativePixmap(
+    gfx::AcceleratedWidget widget,
+    gfx::Size size,
+    gfx::BufferFormat format,
+    gfx::BufferUsage usage) {
+// TODO : We should probably check format and buffer usage, but this will
+// only be called from CefVideoDecoder, so...
+#if defined(OZONE_PLATFORM_EGLHAISI_NEXUS)
+  BEGL_PixmapInfoEXT pix_info = { 0 };
+  EGLNativePixmapType egl_surface = NULL;
+  NEXUS_SurfaceHandle native_surface = NULL;
+
+  NXPL_GetDefaultPixmapInfoEXT(&pix_info);
+  pix_info.width = size.width();
+  pix_info.height = size.height();
+  pix_info.secure = false;
+  pix_info.format = BEGL_BufferFormat_eA8B8G8R8;
+
+  if (NXPL_CreateCompatiblePixmapEXT(nxpl_handle, (void**)&egl_surface,
+				     &native_surface, &pix_info)) {
+    LOG(ERROR) << "NXPL_CreateCompatiblePixmapEXT failed";
+    return nullptr;
+  }
+
+  return new EglhaisiPixmap(size, egl_surface, native_surface);
+#else
+  return nullptr;
+#endif
+}
+
 
 }  // namespace ui

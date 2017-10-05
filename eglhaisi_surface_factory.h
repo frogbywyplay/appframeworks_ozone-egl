@@ -25,6 +25,12 @@ class SurfaceFactoryEglhaisi : public ui::SurfaceFactoryOzone {
   virtual bool LoadEGLGLES2Bindings(
       AddGLLibraryCallback add_gl_library,
       SetGLGetProcAddressProcCallback setprocaddress);
+    virtual scoped_refptr<NativePixmap> CreateNativePixmap(
+      gfx::AcceleratedWidget widget,
+      gfx::Size size,
+      gfx::BufferFormat format,
+      gfx::BufferUsage usage);
+
 };
 
 }  // namespace ui
