@@ -344,6 +344,11 @@ l_exit:
       }
 
       gfx::BufferFormat GetBufferFormat() const override {
+        /*
+         *  We are returning gfx::BufferFormat::RGBA_8888 for two reasons :
+         *  - There is no gfx::BufferFormat::ABGR_8888
+         *  - We are using GL_RGBA when using this as a texture with opengl
+         */
 	return gfx::BufferFormat::RGBA_8888;
       }
 
@@ -489,8 +494,8 @@ scoped_refptr<NativePixmap> SurfaceFactoryEglhaisi::CreateNativePixmap(
   pix_info.secure = false;
   pix_info.format = BEGL_BufferFormat_eA8B8G8R8;
 
-  if (NXPL_CreateCompatiblePixmapEXT(nxpl_handle, (void**)&egl_surface,
-				     &native_surface, &pix_info)) {
+  if (!NXPL_CreateCompatiblePixmapEXT(nxpl_handle, (void**)&egl_surface,
+				      &native_surface, &pix_info)) {
     LOG(ERROR) << "NXPL_CreateCompatiblePixmapEXT failed";
     return nullptr;
   }
