@@ -146,18 +146,24 @@ l_exit:
 #endif
 
 #elif defined(OZONE_PLATFORM_EGLHAISI_NEXUS)
+#if NEXUS_COMMON_PLATFORM_VERSION >= NEXUS_PLATFORM_VERSION(16,3)
     NXPL_NativeWindowInfoEXT window_info;
 
     NXPL_GetDefaultNativeWindowInfoEXT(&window_info);
-
+#else
+    NXPL_NativeWindowInfo window_info;
+#endif
     window_info.x = window_info.y = 0;
     window_info.width = EGLHAISI_WINDOW_WIDTH;
     window_info.height = EGLHAISI_WINDOW_HEIGHT;
     window_info.stretch = true;
     window_info.clientID = 1;
     window_info.zOrder = OZONE_PLATFORM_EGLHAISI_NEXUS_ZORDER;
-
+#if NEXUS_COMMON_PLATFORM_VERSION >= NEXUS_PLATFORM_VERSION(16,3)
     native_window_ = NXPL_CreateNativeWindowEXT(&window_info);
+#else
+    native_window_ = NXPL_CreateNativeWindow(&window_info);
+#endif
     if (!native_window_) {
       LOG(ERROR) << "failed to create Nexus native window";
       return;
@@ -259,10 +265,13 @@ l_exit:
     return (result == DFB_OK);
 #elif defined(OZONE_PLATFORM_EGLHAISI_NEXUS)
     if (native_window_) {
+#if NEXUS_COMMON_PLATFORM_VERSION >= NEXUS_PLATFORM_VERSION(16,3)
       NXPL_NativeWindowInfoEXT window_info;
 
       NXPL_GetDefaultNativeWindowInfoEXT(&window_info);
-
+#else
+      NXPL_NativeWindowInfo window_info;
+#endif
       window_info.x = window_info.y = 0;
       window_info.width = viewport_size.width();
       window_info.height = viewport_size.height();
@@ -270,7 +279,11 @@ l_exit:
       window_info.clientID = 1;
       window_info.zOrder = 0;
 
+#if NEXUS_COMMON_PLATFORM_VERSION >= NEXUS_PLATFORM_VERSION(16,3)
       NXPL_UpdateNativeWindowEXT(native_window_, &window_info);
+#else
+      NXPL_UpdateNativeWindow(native_window_, &window_info);
+#endif
     }
     return true;
  #else
