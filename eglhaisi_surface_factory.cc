@@ -277,7 +277,7 @@ l_exit:
       window_info.height = viewport_size.height();
       window_info.stretch = true;
       window_info.clientID = 1;
-      window_info.zOrder = 0;
+      window_info.zOrder = OZONE_PLATFORM_EGLHAISI_NEXUS_ZORDER;
 
 #if NEXUS_COMMON_PLATFORM_VERSION >= NEXUS_PLATFORM_VERSION(16,3)
       NXPL_UpdateNativeWindowEXT(native_window_, &window_info);
