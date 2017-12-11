@@ -484,21 +484,34 @@ scoped_refptr<NativePixmap> SurfaceFactoryEglhaisi::CreateNativePixmap(
 // TODO : We should probably check format and buffer usage, but this will
 // only be called from CefVideoDecoder, so...
 #if defined(OZONE_PLATFORM_EGLHAISI_NEXUS)
+#if NEXUS_COMMON_PLATFORM_VERSION >= NEXUS_PLATFORM_VERSION(16,3)
   BEGL_PixmapInfoEXT pix_info = { 0 };
+  NXPL_GetDefaultPixmapInfoEXT(&pix_info);
+  // no secure option in BEGL_PixmapInfoEXT.
+  pix_info.secure = false;
+#else
+  BEGL_PixmapInfo pix_info;
+#endif
   EGLNativePixmapType egl_surface = NULL;
   NEXUS_SurfaceHandle native_surface = NULL;
 
-  NXPL_GetDefaultPixmapInfoEXT(&pix_info);
   pix_info.width = size.width();
   pix_info.height = size.height();
-  pix_info.secure = false;
   pix_info.format = BEGL_BufferFormat_eA8B8G8R8;
 
+#if NEXUS_COMMON_PLATFORM_VERSION >= NEXUS_PLATFORM_VERSION(16,3)
   if (!NXPL_CreateCompatiblePixmapEXT(nxpl_handle, (void**)&egl_surface,
 				      &native_surface, &pix_info)) {
     LOG(ERROR) << "NXPL_CreateCompatiblePixmapEXT failed";
     return nullptr;
   }
+#else
+  if (!NXPL_CreateCompatiblePixmap(nxpl_handle, (void**)&egl_surface,
+				   &native_surface, &pix_info)) {
+    LOG(ERROR) << "NXPL_CreateCompatiblePixmap failed";
+    return nullptr;
+  }
+#endif
 
   return new EglhaisiPixmap(size, egl_surface, native_surface);
 #else
