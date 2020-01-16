@@ -49,22 +49,25 @@
 	  'OZONE_PLATFORM_EGLHAISI_NEXUS_ZORDER=<(ozone_platform_eglhaisi_nexus_zorder)'
 	],
         'cflags': [
-          '<!@(pkg-config pkg-config --cflags nexus)',
+          '<!@(pkg-config --cflags nexus)',
         ],
         'link_settings': {
+          'ldflags': [
+            '<!@(pkg-config --libs-only-L --libs-only-other nexus)',
+          ],
           'libraries': [
             # We need to link with the v3driver library even if it's
             # dynamically loaded as the nxpl library needs symbols from it.
             '-lnxpl',
             '-lv3ddriver',
-            '<!@(pkg-config --libs nexus)',
+            '<!@(pkg-config --libs-only-l nexus)',
           ],
         },
       }],
       ['ozone_platform_eglhaisi_backend=="mstar"', {
         'defines': ['OZONE_PLATFORM_EGLHAISI_MSTAR=1'],
         'cflags': [
-          '<!@(pkg-config pkg-config --cflags mi glesv2)',
+          '<!@(pkg-config --cflags mi glesv2)',
         ],
         'link_settings': {
           'libraries': [
