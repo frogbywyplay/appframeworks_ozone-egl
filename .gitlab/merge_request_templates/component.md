@@ -37,3 +37,11 @@
 # Functional tests results
 
 <Post the result of test-app, integration or manual tests>
+
+# Reviewers
+
+| @username |       name        |        email        
+|----------|-------------------|---------------------
+| @ghaderer | Gauthier Haderer  | ghaderer@wyplay.com
+| @aamalric | Alexandre AMALRIC | aamalric@wyplay.com
+
